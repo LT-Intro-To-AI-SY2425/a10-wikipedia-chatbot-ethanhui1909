@@ -92,7 +92,6 @@ def get_polar_radius(planet_name: str) -> str:
 
     return match.group("radius")
 
-
 def get_birth_date(name: str) -> str:
     """Gets birth date of the given person
 
@@ -110,6 +109,33 @@ def get_birth_date(name: str) -> str:
     match = get_match(infobox_text, pattern, error_text)
 
     return match.group("birth")
+
+def get_death_date(name: str) -> str:
+    infobox_text = clean_text(get_first_infobox_text(get_page_html(name)))
+    pattern = r"(?:Died)(?:[^D]+)(?P<death>\d{4}-\d{2}-\d{2})"
+    error_text = (
+        "Page infobox has no death information (at least none in xxxx-xx-xx format)"
+    )
+    match = get_match(infobox_text, pattern, error_text)
+    return match.group("death")
+
+def get_birth_location(name: str) -> str:
+    infobox_text = clean_text(get_first_infobox_text(get_page_html(name)))
+    pattern = r"(?:Born\D*\d{4}-\d{2}-\d{2}\)\s*\w+\s+\d{1,2},\s+\d{4})(?P<birthplace>.+?)Died"
+    error_text = (
+        "Page infobox has no birth location"
+    )
+    match = get_match(infobox_text, pattern, error_text)
+    return match.group("birthplace")
+
+def get_death_location(name: str) -> str:
+    infobox_text = clean_text(get_first_infobox_text(get_page_html(name)))
+    pattern = r"(?:aged\\xa0)(?:\d+\))(?P<deathplace>.+?)Resting place"
+    error_text = (
+        "Page infobox has no death location"
+    )
+    match = get_match(infobox_text, pattern, error_text)
+    return match.group("deathplace")
 
 
 # below are a set of actions. Each takes a list argument and returns a list of answers
@@ -140,6 +166,23 @@ def polar_radius(matches: List[str]) -> List[str]:
     """
     return [get_polar_radius(matches[0])]
 
+def death_date(matches: List[str]) -> List[str]:
+    """Returns polar radius of planet in matches
+
+    Args:
+        matches - match from pattern of planet to find polar radius of
+
+    Returns:
+        polar radius of planet
+    """
+    return [get_death_date(matches[0])]
+
+def birth_location(matches: List[str]) -> List[str]:
+    return [get_birth_location(matches[0])]
+
+def death_location(matches: List[str]) -> List[str]:
+    return [get_death_location(matches[0])]
+
 
 # dummy argument is ignored and doesn't matter
 def bye_action(dummy: List[str]) -> None:
@@ -156,7 +199,10 @@ Action = Callable[[List[str]], List[Any]]
 pa_list: List[Tuple[Pattern, Action]] = [
     ("when was % born".split(), birth_date),
     ("what is the polar radius of %".split(), polar_radius),
-    (["bye"], bye_action),
+    ("when did % die".split(), death_date),
+    ("where did % die".split(), death_location),
+    ("where was % born".split(), birth_location),
+    (["bye"], bye_action)
 ]
 
 
